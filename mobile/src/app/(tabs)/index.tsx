@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  StyleSheet,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,30 +26,32 @@ export default function HomeScreen() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
-  useEffect(() => {
-    async function carregarPosts() {
-      try {
-        if (!API_URL) {
-          throw new Error("EXPO_PUBLIC_API_URL não configurada");
+  useFocusEffect(
+    useCallback(() => {
+      async function carregarPosts() {
+        try {
+          if (!API_URL) {
+            throw new Error("EXPO_PUBLIC_API_URL não configurada");
+          }
+
+          const resposta = await fetch(`${API_URL}/posts`);
+
+          if (!resposta.ok) {
+            throw new Error("Erro ao buscar postagens");
+          }
+
+          const dados: Post[] = await resposta.json();
+          setPosts(dados);
+        } catch (error) {
+          setErro(error instanceof Error ? error.message : "Erro desconhecido");
+        } finally {
+          setCarregando(false);
         }
-
-        const resposta = await fetch(`${API_URL}/posts`);
-
-        if (!resposta.ok) {
-          throw new Error("Erro ao buscar postagens");
-        }
-
-        const dados: Post[] = await resposta.json();
-        setPosts(dados);
-      } catch (error) {
-        setErro(error instanceof Error ? error.message : "Erro desconhecido");
-      } finally {
-        setCarregando(false);
       }
-    }
 
-    carregarPosts();
-  }, []);
+      carregarPosts();
+    }, []),
+  );
 
   const postsFiltrados = posts.filter((post) => {
     const termo = busca.toLowerCase();
@@ -65,6 +66,13 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Blog Educacional</Text>
+
+      <Pressable
+        style={styles.botaoNovo}
+        onPress={() => router.push("/posts/create")}
+      >
+        <Text style={styles.textoBotao}>+ Nova postagem</Text>
+      </Pressable>
 
       <TextInput
         style={styles.busca}
@@ -147,5 +155,17 @@ const styles = StyleSheet.create({
   erro: {
     color: "#dc2626",
     textAlign: "center",
+  },
+  botaoNovo: {
+    backgroundColor: "#2563eb",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  textoBotao: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
