@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -22,6 +23,18 @@ export default function EditPostScreen() {
   const [salvando, setSalvando] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    async function verificarAcesso() {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+      }
+    }
+
+    verificarAcesso();
+  }, []);
 
   // Buscar os dados da postagem
   useEffect(() => {
@@ -60,10 +73,19 @@ export default function EditPostScreen() {
     try {
       setSalvando(true);
 
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        Alert.alert("Atenção", "Faça login como professor.");
+        router.push("/login");
+        return;
+      }
+
       const resposta = await fetch(`${API_URL}/posts/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           titulo,

@@ -1,5 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -19,6 +20,18 @@ export default function CreatePostScreen() {
   const [conteudo, setConteudo] = useState("");
   const [salvando, setSalvando] = useState(false);
 
+  useEffect(() => {
+    async function verificarAcesso() {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+      }
+    }
+
+    verificarAcesso();
+  }, []);
+
   async function criarPost() {
     if (!titulo.trim() || !autor.trim() || !conteudo.trim()) {
       Alert.alert("Atenção", "Preencha todos os campos.");
@@ -27,11 +40,19 @@ export default function CreatePostScreen() {
 
     try {
       setSalvando(true);
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        Alert.alert("Atenção", "Faça login como professor.");
+        router.push("/login");
+        return;
+      }
 
       const resposta = await fetch(`${API_URL}/posts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           titulo,

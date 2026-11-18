@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -25,6 +26,17 @@ export default function HomeScreen() {
   const [busca, setBusca] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const [autenticado, setAutenticado] = useState(false);
+
+  async function verificarLogin() {
+    const token = await AsyncStorage.getItem("token");
+    setAutenticado(!!token);
+  }
+
+  async function sair() {
+    await AsyncStorage.removeItem("token");
+    setAutenticado(false);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -50,6 +62,7 @@ export default function HomeScreen() {
       }
 
       carregarPosts();
+      verificarLogin();
     }, []),
   );
 
@@ -67,12 +80,34 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Blog Educacional</Text>
 
-      <Pressable
-        style={styles.botaoNovo}
-        onPress={() => router.push("/posts/create")}
-      >
-        <Text style={styles.textoBotao}>+ Nova postagem</Text>
-      </Pressable>
+      {autenticado ? (
+        <>
+          <Pressable
+            style={styles.botaoLogin}
+            onPress={() => router.push("/admin")}
+          >
+            <Text style={styles.textoBotao}>Painel administrativo</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.botaoLogin}
+            onPress={() => router.push("/posts/create")}
+          >
+            <Text style={styles.textoBotao}>+ Nova postagem</Text>
+          </Pressable>
+
+          <Pressable style={styles.botaoLogin} onPress={sair}>
+            <Text style={styles.textoBotao}>Sair</Text>
+          </Pressable>
+        </>
+      ) : (
+        <Pressable
+          style={styles.botaoLogin}
+          onPress={() => router.push("/login")}
+        >
+          <Text style={styles.textoBotao}>Acesso do professor</Text>
+        </Pressable>
+      )}
 
       <TextInput
         style={styles.busca}
@@ -167,5 +202,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  botaoLogin: {
+    backgroundColor: "#172554",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+    alignItems: "center",
   },
 });
